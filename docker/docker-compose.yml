@@ -1,0 +1,64 @@
+version: '3.6'
+services:
+  php:
+    image: docfony:php-7.2
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    volumes:
+      - '../project:/var/www'
+    deploy:
+      replicas: 6
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      endpoint_mode: dnsrr
+    networks:
+      - dice_network
+
+  nginx:
+    image: docfony:nginx-1.13
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - '80:80'
+    volumes:
+      - '../project:/var/www'
+    deploy:
+      replicas: 6
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      endpoint_mode: vip
+    networks:
+      - dice_network
+
+  mongo:
+      image: mongo:3.4
+      volumes:
+        - 'dev-mongo:/data/db'
+        - 'dev-mongo-config:/data/configdb'
+      deploy:
+        replicas: 2
+        update_config:
+          parallelism: 2
+          delay: 10s
+        restart_policy:
+          condition: on-failure
+        endpoint_mode: dnsrr
+      networks:
+        - dice_network
+
+networks:
+  dice_network:
+    driver: overlay
+
+volumes:
+  dev-mysql:
+  dev-mongo:
+  dev-mongo-config:
